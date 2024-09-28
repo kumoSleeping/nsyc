@@ -3,173 +3,215 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canvas Text Generator</title>
-        <style>
-        @font-face {
-            font-family: 'CustomFont';
-            src: url('./old.ttf') format('truetype');
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
         }
 
         canvas {
-            border: 1px solid black;
-        }
-
-        #controls {
-            margin-bottom: 20px;
-        }
-
-        #controls input {
+            border: 1px solid white;
+            margin: 20px auto;
+            /* 上下间距 20px，左右居中 */
             display: block;
-            margin-bottom: 10px;
-            width: 300px;
-            padding: 5px;
-            font-size: 16px;
+            /* 确保画布是块级元素，支持居中 */
         }
 
-        #controls button {
+        #form-container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #222;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input {
+            font-size: 18px;
+            padding: 10px;
+            margin: 10px 0;
+            width: 90%;
+        }
+
+        label {
+            font-size: 20px;
+        }
+
+        button {
+            font-size: 20px;
             padding: 10px 20px;
-            font-size: 16px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            border: none;
+            background-color: #555;
+            color: white;
+        }
+
+        #saveCanvas {
+            background-color: #28a745;
+        }
+
+        canvas {
+            border: 1px solid white;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 
 <body>
-    <div id="controls">
-        <input type="text" id="line1" placeholder="输入第一行文本" value="">
-        <input type="text" id="line2" placeholder="输入第二行文本" value="">
-        <input type="text" id="highlightText" placeholder="输入要高亮的文本" value="">
-        <input type="text" id="line3" placeholder="输入第三行文本" value="">
-        <button onclick="drawCanvas()">生成图片</button>
+
+    <div id="form-container">
+        <label for="line1">Line 1:</label>
+        <input type="text" id="line1" value="化棒泡酒">
+
+        <label for="line2">Line 2:</label>
+        <input type="text" id="line2" value="全是和中国顾客">
+
+        <label for="highlightText">Line 2 Highlight Text:</label>
+        <input type="text" id="highlightText" value="中国顾客">
+        
+
+        <label for="line3">Line 3:</label>
+        <input type="text" id="line3" value="一起泡的">
+
+        <button id="updateCanvas">Update Canvas</button>
+        <button id="saveCanvas">Save Image</button>
     </div>
+
     <canvas id="canvas" width="1200" height="1200"></canvas>
+
     <script>
-        // 等待字体加载完成
-        document.fonts.load('10px "CustomFont"').then(drawCanvas);
-
         function drawTextWithHighlight(context, text, x, y, highlightPart, fontSize, bgColor = 'white', textColor = 'black') {
-            context.font = `${fontSize}px CustomFont`;
+            context.font = `${fontSize}px sans-serif`;
 
-            let textBeforeHighlight, highlightedText, textAfterHighlight;
-            if (highlightPart) {
-                textBeforeHighlight = text.substring(0, highlightPart.start);
-                highlightedText = text.substring(highlightPart.start, highlightPart.end);
-                textAfterHighlight = text.substring(highlightPart.end);
-            } else {
-                textBeforeHighlight = text;
-                highlightedText = '';
-                textAfterHighlight = '';
-            }
+            const textBeforeHighlight = text.substring(0, highlightPart.start);
+            const highlightedText = text.substring(highlightPart.start, highlightPart.end);
+            const textAfterHighlight = text.substring(highlightPart.end);
 
-            // 测量宽度
+            // Measure widths
             const beforeWidth = context.measureText(textBeforeHighlight).width;
             const highlightWidth = context.measureText(highlightedText).width;
+            const afterWidth = context.measureText(textAfterHighlight).width;
 
-            // 绘制高亮背景
-            if (highlightPart) {
-                context.fillStyle = bgColor;
-                context.fillRect(x + beforeWidth, y, highlightWidth, fontSize);
-            }
-
-            // 绘制文本
+            // Draw the normal part (before highlight)
             context.fillStyle = 'white';
             context.fillText(textBeforeHighlight, x, y);
-            if (highlightPart) {
-                context.fillStyle = textColor;
-                context.fillText(highlightedText, x + beforeWidth, y);
-                context.fillStyle = 'white';
-                context.fillText(textAfterHighlight, x + beforeWidth + highlightWidth, y);
-            }
+
+            // Draw the highlighted background, aligned properly with the text
+            context.fillStyle = bgColor;
+            context.fillRect(x + beforeWidth, y, highlightWidth, fontSize);
+
+            // Draw the highlighted text
+            context.fillStyle = textColor;
+            context.fillText(highlightedText, x + beforeWidth, y);
+
+            // Draw the remaining part (after highlight)
+            context.fillStyle = 'white';
+            context.fillText(textAfterHighlight, x + beforeWidth + highlightWidth, y);
         }
 
         function calculateFontSizeForLine(context, text, maxWidth, baseFontSize) {
-            context.font = `${baseFontSize}px CustomFont`;
+            context.font = `${baseFontSize}px sans-serif`;
             const textWidth = context.measureText(text).width;
             if (textWidth >= maxWidth) return baseFontSize;
 
+            // Scale the font size proportionally
             const scaleFactor = maxWidth / textWidth;
             return Math.floor(baseFontSize * scaleFactor);
         }
 
         function drawCanvas() {
-            const canvas = document.getElementById('canvas');
-            const context = canvas.getContext('2d');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
 
-            // 清空画布
-            context.clearRect(0, 0, canvas.width, canvas.height);
+    // Clear the canvas each time before drawing
+    context.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 填充背景
-            context.fillStyle = 'black';
-            context.fillRect(0, 0, canvas.width, canvas.height);
+    // No background fill here to keep the canvas transparent
 
-            // 获取用户输入
-            const line1Text = document.getElementById('line1').value || '日本語は';
-            const line2Text = document.getElementById('line2').value || '全て女性声優';
-            const line3Text = document.getElementById('line3').value || 'から学んだ';
-            const highlightText = document.getElementById('highlightText').value || '女性声優';
+    // Get user input values
+    const line1Text = document.getElementById('line1').value;
+    const line2Text = document.getElementById('line2').value;
+    const highlightText = document.getElementById('highlightText').value; // Get the highlight text
+    const line3Text = document.getElementById('line3').value;
 
-            // 计算高亮位置
-            let highlight = null;
-            if (highlightText && line2Text.includes(highlightText)) {
-                const start = line2Text.indexOf(highlightText);
-                const end = start + highlightText.length;
-                highlight = { start: start, end: end };
-            }
+    // Automatically find the start and end indices of the highlight text in Line 2
+    const highlight2Start = line2Text.indexOf(highlightText);
+    const highlight2End = highlight2Start + highlightText.length;
 
-            // 定义行
-            const lines = [
-                { text: line1Text, highlight: null },
-                { text: line2Text, highlight: highlight },
-                { text: line3Text, highlight: null }
-            ];
+    // Define text lines and highlight info
+    const lines = [
+        { text: line1Text, highlight: null },
+        { text: line2Text, highlight: { start: highlight2Start, end: highlight2End } },
+        { text: line3Text, highlight: null }
+    ];
 
-            // 找到最长的行
-            const maxLine = lines.reduce((prev, current) => {
-                return (prev.text.length > current.text.length) ? prev : current;
-            });
+    // Find the longest line
+    const maxLine = lines.reduce((prev, current) => {
+        return (prev.text.length > current.text.length) ? prev : current;
+    });
 
-            // 设置基础字体大小
-            context.font = `10px CustomFont`;
-            const maxLineWidth_pre = context.measureText(maxLine.text).width;
-            const baseFontSize = (canvas.width * 0.8) / maxLineWidth_pre * 10;
+    // Measure the width of the longest line
+    context.font = "30px sans-serif"; // Set a temporary font to calculate width
+    const maxLineWidth_pre = context.measureText(maxLine.text).width;
 
-            // 计算最大行宽
-            let maxLineWidth = 0;
-            lines.forEach(line => {
-                context.font = `${baseFontSize}px CustomFont`;
-                const textWidth = context.measureText(line.text).width;
-                if (textWidth > maxLineWidth) {
-                    maxLineWidth = textWidth;
-                }
-            });
+    // Set base font size based on the longest line
+    const baseFontSize = 1 / maxLineWidth_pre * 28000;
 
-            let yPosition = (canvas.height - (lines.length * baseFontSize + (lines.length - 1) * baseFontSize * 0.08)) / 2 - 130;
+    // Measure the widest line to determine the scale factor
+    let maxLineWidth = 0;
+    lines.forEach(line => {
+        context.font = `${baseFontSize}px sans-serif`;
+        const textWidth = context.measureText(line.text).width;
+        if (textWidth > maxLineWidth) {
+            maxLineWidth = textWidth;
+        }
+    });
 
-            // 设置文本基线
-            context.textBaseline = 'top';
+    // Set initial y position for the first line
+    let yPosition = 100;
 
-            // 绘制每一行
-            lines.forEach(line => {
-                const fontSize = calculateFontSizeForLine(context, line.text, maxLineWidth, baseFontSize);
-                context.font = `${fontSize}px CustomFont`;
+    // Set textBaseline to 'top' to make text align from the top of the canvas
+    context.textBaseline = 'top';
 
-                const lineWidth = context.measureText(line.text).width;
-                const xPosition = (canvas.width - lineWidth) / 2;
+    // Draw each line and update yPosition directly after each line
+    lines.forEach(line => {
+        const fontSize = calculateFontSizeForLine(context, line.text, maxLineWidth, baseFontSize);
 
-                if (line.highlight) {
-                    drawTextWithHighlight(context, line.text, xPosition, yPosition, line.highlight, fontSize);
-                } else {
-                    context.fillStyle = 'white';
-                    context.fillText(line.text, xPosition, yPosition);
-                }
-
-                yPosition += fontSize + fontSize * 0.08;
-            });
+        if (line.highlight && line.highlight.start !== -1) {
+            // Draw highlighted text if highlight exists
+            drawTextWithHighlight(context, line.text, (canvas.width - maxLineWidth) / 2, yPosition, line.highlight, fontSize);
+        } else {
+            // Draw normal text
+            context.font = `${fontSize}px sans-serif`;
+            context.fillStyle = 'white';
+            const lineWidth = context.measureText(line.text).width;
+            context.fillText(line.text, (canvas.width - lineWidth) / 2, yPosition);
         }
 
-        // 等待页面加载完成后再加载字体
-        window.onload = function () {
-            document.fonts.ready.then(drawCanvas);
-        };
+        // Update yPosition for the next line by adding the font size
+        yPosition += fontSize + fontSize * 0.1; // Add 10% padding between lines
+    });
+}
+
+        function saveCanvas() {
+            const canvas = document.getElementById('canvas');
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = 'canvas_image.png';
+            link.click();
+        }
+
+        document.getElementById('updateCanvas').addEventListener('click', drawCanvas);
+        document.getElementById('saveCanvas').addEventListener('click', saveCanvas);
+
+        window.onload = drawCanvas;
     </script>
 </body>
 
