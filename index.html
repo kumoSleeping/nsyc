@@ -21,7 +21,7 @@
         }
 
         #form-container {
-            width: 80%;
+            width: 60%;
             margin: 0 auto;
             padding: 20px;
             background-color: #222;
@@ -35,7 +35,7 @@
             font-size: 18px;
             padding: 10px;
             margin: 10px 0;
-            width: 90%;
+            width: 80%;
         }
 
         label {
@@ -61,10 +61,21 @@
             border: 1px solid white;
             margin-bottom: 20px;
         }
+
+        footer {
+            margin-top: 20px;
+        }
+
+        h1 {
+            font-size: 36px;
+        }
     </style>
 </head>
 
 <body>
+    <!-- 标题 -->
+    <h1 style="text-align: center;">女声优吃印图生成器</h1>
+    <!-- <h2 style="text-align: center;">Todo: 1. 优化字体 2. 优化行间距</h2> -->
 
     <div id="form-container">
         <label for="line1">Line 1:</label>
@@ -84,8 +95,14 @@
         <button id="saveCanvas">Save Image</button>
     </div>
 
+    <h1 style="text-align: center;">⚠️ 项目仍在开发 推荐使用Chrome内核以保证渲染正确</h1>
+
     <canvas id="canvas" width="1200" height="1200"></canvas>
 
+    <!-- 底部说明 -->
+    <footer style="text-align: center; margin-top: 20px;">
+        <h1>© 2024 <a href="https://github.com/kumoSleeping/nsyc">开源地址</a>  <a href="https://kumo.ltd">kumo</a> </h1>
+    </footer>   
     <script>
         function drawTextWithHighlight(context, text, x, y, highlightPart, fontSize, bgColor = 'white', textColor = 'black') {
             context.font = `${fontSize}px sans-serif`;
