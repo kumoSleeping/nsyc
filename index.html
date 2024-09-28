@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Canvas Text Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'CustomFont';
+            src: url('./old.ttf') format('truetype');
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        #controls {
+            margin-bottom: 20px;
+        }
+
+        #controls input {
+            display: block;
+            margin-bottom: 10px;
+            width: 300px;
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        #controls button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="controls">
+        <input type="text" id="line1" placeholder="输入第一行文本" value="">
+        <input type="text" id="line2" placeholder="输入第二行文本" value="">
+        <input type="text" id="highlightText" placeholder="输入要高亮的文本" value="">
+        <input type="text" id="line3" placeholder="输入第三行文本" value="">
+        <button onclick="drawCanvas()">生成图片</button>
+    </div>
+    <canvas id="canvas" width="1200" height="1200"></canvas>
+    <script>
+        // 等待字体加载完成
+        document.fonts.load('10px "CustomFont"').then(drawCanvas);
+
+        function drawTextWithHighlight(context, text, x, y, highlightPart, fontSize, bgColor = 'white', textColor = 'black') {
+            context.font = `${fontSize}px CustomFont`;
+
+            let textBeforeHighlight, highlightedText, textAfterHighlight;
+            if (highlightPart) {
+                textBeforeHighlight = text.substring(0, highlightPart.start);
+                highlightedText = text.substring(highlightPart.start, highlightPart.end);
+                textAfterHighlight = text.substring(highlightPart.end);
+            } else {
+                textBeforeHighlight = text;
+                highlightedText = '';
+                textAfterHighlight = '';
+            }
+
+            // 测量宽度
+            const beforeWidth = context.measureText(textBeforeHighlight).width;
+            const highlightWidth = context.measureText(highlightedText).width;
+
+            // 绘制高亮背景
+            if (highlightPart) {
+                context.fillStyle = bgColor;
+                context.fillRect(x + beforeWidth, y, highlightWidth, fontSize);
+            }
+
+            // 绘制文本
+            context.fillStyle = 'white';
+            context.fillText(textBeforeHighlight, x, y);
+            if (highlightPart) {
+                context.fillStyle = textColor;
+                context.fillText(highlightedText, x + beforeWidth, y);
+                context.fillStyle = 'white';
+                context.fillText(textAfterHighlight, x + beforeWidth + highlightWidth, y);
+            }
+        }
+
+        function calculateFontSizeForLine(context, text, maxWidth, baseFontSize) {
+            context.font = `${baseFontSize}px CustomFont`;
+            const textWidth = context.measureText(text).width;
+            if (textWidth >= maxWidth) return baseFontSize;
+
+            const scaleFactor = maxWidth / textWidth;
+            return Math.floor(baseFontSize * scaleFactor);
+        }
+
+        function drawCanvas() {
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+
+            // 清空画布
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 填充背景
+            context.fillStyle = 'black';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 获取用户输入
+            const line1Text = document.getElementById('line1').value || '日本語は';
+            const line2Text = document.getElementById('line2').value || '全て女性声優';
+            const line3Text = document.getElementById('line3').value || 'から学んだ';
+            const highlightText = document.getElementById('highlightText').value || '女性声優';
+
+            // 计算高亮位置
+            let highlight = null;
+            if (highlightText && line2Text.includes(highlightText)) {
+                const start = line2Text.indexOf(highlightText);
+                const end = start + highlightText.length;
+                highlight = { start: start, end: end };
+            }
+
+            // 定义行
+            const lines = [
+                { text: line1Text, highlight: null },
+                { text: line2Text, highlight: highlight },
+                { text: line3Text, highlight: null }
+            ];
+
+            // 找到最长的行
+            const maxLine = lines.reduce((prev, current) => {
+                return (prev.text.length > current.text.length) ? prev : current;
+            });
+
+            // 设置基础字体大小
+            context.font = `10px CustomFont`;
+            const maxLineWidth_pre = context.measureText(maxLine.text).width;
+            const baseFontSize = (canvas.width * 0.8) / maxLineWidth_pre * 10;
+
+            // 计算最大行宽
+            let maxLineWidth = 0;
+            lines.forEach(line => {
+                context.font = `${baseFontSize}px CustomFont`;
+                const textWidth = context.measureText(line.text).width;
+                if (textWidth > maxLineWidth) {
+                    maxLineWidth = textWidth;
+                }
+            });
+
+            let yPosition = (canvas.height - (lines.length * baseFontSize + (lines.length - 1) * baseFontSize * 0.08)) / 2 - 130;
+
+            // 设置文本基线
+            context.textBaseline = 'top';
+
+            // 绘制每一行
+            lines.forEach(line => {
+                const fontSize = calculateFontSizeForLine(context, line.text, maxLineWidth, baseFontSize);
+                context.font = `${fontSize}px CustomFont`;
+
+                const lineWidth = context.measureText(line.text).width;
+                const xPosition = (canvas.width - lineWidth) / 2;
+
+                if (line.highlight) {
+                    drawTextWithHighlight(context, line.text, xPosition, yPosition, line.highlight, fontSize);
+                } else {
+                    context.fillStyle = 'white';
+                    context.fillText(line.text, xPosition, yPosition);
+                }
+
+                yPosition += fontSize + fontSize * 0.08;
+            });
+        }
+
+        // 等待页面加载完成后再加载字体
+        window.onload = function () {
+            document.fonts.ready.then(drawCanvas);
+        };
+    </script>
+</body>
+
+</html>
