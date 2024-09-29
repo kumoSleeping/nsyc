@@ -57,11 +57,6 @@
             background-color: #28a745;
         }
 
-        canvas {
-            border: 1px solid white;
-            margin-bottom: 20px;
-        }
-
         footer {
             margin-top: 20px;
         }
@@ -69,13 +64,17 @@
         h1 {
             font-size: 36px;
         }
+
+        @font-face {
+            font-family: 'OldFont';
+            src: url('./oh.ttf') format('truetype');
+        }
     </style>
 </head>
 
 <body>
     <!-- 标题 -->
     <h1 style="text-align: center;">女声优吃印图生成器</h1>
-    <!-- <h2 style="text-align: center;">Todo: 1. 优化字体 2. 优化行间距</h2> -->
 
     <div id="form-container">
         <label for="line1">Line 1:</label>
@@ -86,7 +85,6 @@
 
         <label for="highlightText">Line 2 Highlight Text:</label>
         <input type="text" id="highlightText" value="中国顾客">
-        
 
         <label for="line3">Line 3:</label>
         <input type="text" id="line3" value="一起泡的">
@@ -101,119 +99,69 @@
 
     <!-- 底部说明 -->
     <footer style="text-align: center; margin-top: 20px;">
-        <h1>© 2024 <a href="https://github.com/kumoSleeping/nsyc">开源地址</a>  <a href="https://kumo.ltd">kumo</a> </h1>
-    </footer>   
+        <h1>© 2024 <a href="https://github.com/kumoSleeping/nsyc">开源地址</a> <a href="https://kumo.ltd">kumo</a> </h1>
+    </footer>
+
     <script>
-        function drawTextWithHighlight(context, text, x, y, highlightPart, fontSize, bgColor = 'white', textColor = 'black') {
-            context.font = `${fontSize}px sans-serif`;
+function drawCanvas() {
+    const font = new FontFace('OldFont', 'url(./oh.ttf)');
+    font.load().then(function () {
+        document.fonts.add(font);
 
-            const textBeforeHighlight = text.substring(0, highlightPart.start);
-            const highlightedText = text.substring(highlightPart.start, highlightPart.end);
-            const textAfterHighlight = text.substring(highlightPart.end);
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
 
-            // Measure widths
-            const beforeWidth = context.measureText(textBeforeHighlight).width;
-            const highlightWidth = context.measureText(highlightedText).width;
-            const afterWidth = context.measureText(textAfterHighlight).width;
+        // 清除画布，但不填充背景颜色，保持透明背景
+        context.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw the normal part (before highlight)
-            context.fillStyle = 'white';
-            context.fillText(textBeforeHighlight, x, y);
+        const line1Text = document.getElementById('line1').value;
+        const line2Text = document.getElementById('line2').value;
+        const highlightText = document.getElementById('highlightText').value;
+        const line3Text = document.getElementById('line3').value;
 
-            // Draw the highlighted background, aligned properly with the text
-            context.fillStyle = bgColor;
-            context.fillRect(x + beforeWidth, y, highlightWidth, fontSize);
+        const highlight2Start = line2Text.indexOf(highlightText);
+        const highlight2End = highlight2Start + highlightText.length;
 
-            // Draw the highlighted text
-            context.fillStyle = textColor;
-            context.fillText(highlightedText, x + beforeWidth, y);
+        const lines = [
+            { text: line1Text, highlight: null },
+            { text: line2Text, highlight: { start: highlight2Start, end: highlight2End } },
+            { text: line3Text, highlight: null }
+        ];
 
-            // Draw the remaining part (after highlight)
-            context.fillStyle = 'white';
-            context.fillText(textAfterHighlight, x + beforeWidth + highlightWidth, y);
-        }
+        const maxLine = lines.reduce((prev, current) => {
+            return (prev.text.length > current.text.length) ? prev : current;
+        });
 
-        function calculateFontSizeForLine(context, text, maxWidth, baseFontSize) {
-            context.font = `${baseFontSize}px sans-serif`;
-            const textWidth = context.measureText(text).width;
-            if (textWidth >= maxWidth) return baseFontSize;
+        context.font = "30px 'OldFont'";
+        const maxLineWidth_pre = context.measureText(maxLine.text).width;
+        const baseFontSize = 1 / maxLineWidth_pre * 28000;
 
-            // Scale the font size proportionally
-            const scaleFactor = maxWidth / textWidth;
-            return Math.floor(baseFontSize * scaleFactor);
-        }
+        let maxLineWidth = 0;
+        lines.forEach(line => {
+            context.font = `${baseFontSize}px 'OldFont'`;
+            const textWidth = context.measureText(line.text).width;
+            if (textWidth > maxLineWidth) {
+                maxLineWidth = textWidth;
+            }
+        });
 
-        function drawCanvas() {
-    const canvas = document.getElementById('canvas');
-    const context = canvas.getContext('2d');
+        let yPosition = 100;
+        context.textBaseline = 'top';
 
-    // Clear the canvas each time before drawing
-    context.clearRect(0, 0, canvas.width, canvas.height);
+        lines.forEach(line => {
+            const fontSize = calculateFontSizeForLine(context, line.text, maxLineWidth, baseFontSize);
 
-    // No background fill here to keep the canvas transparent
+            if (line.highlight && line.highlight.start !== -1) {
+                drawTextWithHighlight(context, line.text, (canvas.width - maxLineWidth) / 2, yPosition, line.highlight, fontSize);
+            } else {
+                context.font = `${fontSize}px 'OldFont'`;
+                context.fillStyle = 'white';  // 确保文字颜色为白色
+                const lineWidth = context.measureText(line.text).width;
+                context.fillText(line.text, (canvas.width - lineWidth) / 2, yPosition);
+            }
 
-    // Get user input values
-    const line1Text = document.getElementById('line1').value;
-    const line2Text = document.getElementById('line2').value;
-    const highlightText = document.getElementById('highlightText').value; // Get the highlight text
-    const line3Text = document.getElementById('line3').value;
-
-    // Automatically find the start and end indices of the highlight text in Line 2
-    const highlight2Start = line2Text.indexOf(highlightText);
-    const highlight2End = highlight2Start + highlightText.length;
-
-    // Define text lines and highlight info
-    const lines = [
-        { text: line1Text, highlight: null },
-        { text: line2Text, highlight: { start: highlight2Start, end: highlight2End } },
-        { text: line3Text, highlight: null }
-    ];
-
-    // Find the longest line
-    const maxLine = lines.reduce((prev, current) => {
-        return (prev.text.length > current.text.length) ? prev : current;
-    });
-
-    // Measure the width of the longest line
-    context.font = "30px sans-serif"; // Set a temporary font to calculate width
-    const maxLineWidth_pre = context.measureText(maxLine.text).width;
-
-    // Set base font size based on the longest line
-    const baseFontSize = 1 / maxLineWidth_pre * 28000;
-
-    // Measure the widest line to determine the scale factor
-    let maxLineWidth = 0;
-    lines.forEach(line => {
-        context.font = `${baseFontSize}px sans-serif`;
-        const textWidth = context.measureText(line.text).width;
-        if (textWidth > maxLineWidth) {
-            maxLineWidth = textWidth;
-        }
-    });
-
-    // Set initial y position for the first line
-    let yPosition = 100;
-
-    // Set textBaseline to 'top' to make text align from the top of the canvas
-    context.textBaseline = 'top';
-
-    // Draw each line and update yPosition directly after each line
-    lines.forEach(line => {
-        const fontSize = calculateFontSizeForLine(context, line.text, maxLineWidth, baseFontSize);
-
-        if (line.highlight && line.highlight.start !== -1) {
-            // Draw highlighted text if highlight exists
-            drawTextWithHighlight(context, line.text, (canvas.width - maxLineWidth) / 2, yPosition, line.highlight, fontSize);
-        } else {
-            // Draw normal text
-            context.font = `${fontSize}px sans-serif`;
-            context.fillStyle = 'white';
-            const lineWidth = context.measureText(line.text).width;
-            context.fillText(line.text, (canvas.width - lineWidth) / 2, yPosition);
-        }
-
-        // Update yPosition for the next line by adding the font size
-        yPosition += fontSize + fontSize * 0.1; // Add 10% padding between lines
+            yPosition += fontSize + fontSize * 0.1;
+        });
     });
 }
 
@@ -229,6 +177,44 @@
         document.getElementById('saveCanvas').addEventListener('click', saveCanvas);
 
         window.onload = drawCanvas;
+
+        function calculateFontSizeForLine(context, text, maxWidth, baseFontSize) {
+            context.font = `${baseFontSize}px 'OldFont'`;
+            const textWidth = context.measureText(text).width;
+            if (textWidth >= maxWidth) return baseFontSize;
+
+            const scaleFactor = maxWidth / textWidth;
+            return Math.floor(baseFontSize * scaleFactor);
+        }
+
+        function drawTextWithHighlight(context, text, x, y, highlightPart, fontSize, bgColor = 'white', textColor = 'black') {
+            context.font = `${fontSize}px 'OldFont'`;
+
+            const textBeforeHighlight = text.substring(0, highlightPart.start);
+            const highlightedText = text.substring(highlightPart.start, highlightPart.end);
+            const textAfterHighlight = text.substring(highlightPart.end);
+
+            const beforeWidth = context.measureText(textBeforeHighlight).width;
+            const highlightWidth = context.measureText(highlightedText).width;
+
+            const metrics = context.measureText(textBeforeHighlight);
+            const actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
+            const rectY = y - metrics.actualBoundingBoxAscent - 4;
+            const rectHeight = actualHeight + 8;
+
+            context.fillStyle = 'white';
+            context.fillText(textBeforeHighlight, x, y);
+
+            context.fillStyle = bgColor;
+            context.fillRect(x + beforeWidth, rectY, highlightWidth, rectHeight);
+
+            context.fillStyle = textColor;
+            context.fillText(highlightedText, x + beforeWidth, y);
+
+            context.fillStyle = 'white';
+            context.fillText(textAfterHighlight, x + beforeWidth + highlightWidth, y);
+        }
     </script>
 </body>
 
