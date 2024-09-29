@@ -15,9 +15,7 @@
         canvas {
             border: 1px solid white;
             margin: 20px auto;
-            /* 上下间距 20px，左右居中 */
             display: block;
-            /* 确保画布是块级元素，支持居中 */
         }
 
         #form-container {
@@ -69,6 +67,16 @@
             font-family: 'OldFont';
             src: url('./oh.ttf') format('truetype');
         }
+
+        #loadingText {
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
     </style>
 </head>
 
@@ -89,81 +97,91 @@
         <label for="line3">Line 3:</label>
         <input type="text" id="line3" value="一起泡的">
 
-        <button id="updateCanvas">Update Canvas</button>
-        <button id="saveCanvas">Save Image</button>
+        <button id="saveCanvas">保存透明图片</button>
     </div>
 
-    <h1 style="text-align: center;">⚠️ 项目仍在开发 推荐使用Chrome内核以保证渲染正确</h1>
+    <!-- 正在加载字体提示 -->
+    <div id="loadingText">正在加载字体...</div>
 
     <canvas id="canvas" width="1200" height="1200"></canvas>
 
     <!-- 底部说明 -->
-    <footer style="text-align: center; margin-top: 20px;">
-        <h1>© 2024 <a href="https://github.com/kumoSleeping/nsyc">开源地址</a> <a href="https://kumo.ltd">kumo</a> </h1>
+    <footer style="text-align: center; margin-top: 12px;">
+        <h1>© 2024 <a href="https://github.com/kumoSleeping/nsyc">@Github</a> @kumo</h1>
     </footer>
 
     <script>
-function drawCanvas() {
-    const font = new FontFace('OldFont', 'url(./oh.ttf)');
-    font.load().then(function () {
-        document.fonts.add(font);
+        function drawCanvas() {
+            const font = new FontFace('OldFont', 'url(./oh.ttf)');
+            font.load().then(function () {
+                document.fonts.add(font);
 
-        const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
+                const canvas = document.getElementById('canvas');
+                const context = canvas.getContext('2d');
 
-        // 清除画布，但不填充背景颜色，保持透明背景
-        context.clearRect(0, 0, canvas.width, canvas.height);
+                // 隐藏加载提示
+                document.getElementById('loadingText').style.display = 'none';
 
-        const line1Text = document.getElementById('line1').value;
-        const line2Text = document.getElementById('line2').value;
-        const highlightText = document.getElementById('highlightText').value;
-        const line3Text = document.getElementById('line3').value;
+                // 清除画布，但不填充背景颜色，保持透明背景
+                context.clearRect(0, 0, canvas.width, canvas.height);
 
-        const highlight2Start = line2Text.indexOf(highlightText);
-        const highlight2End = highlight2Start + highlightText.length;
+                const line1Text = document.getElementById('line1').value;
+                const line2Text = document.getElementById('line2').value;
+                const highlightText = document.getElementById('highlightText').value;
+                const line3Text = document.getElementById('line3').value;
 
-        const lines = [
-            { text: line1Text, highlight: null },
-            { text: line2Text, highlight: { start: highlight2Start, end: highlight2End } },
-            { text: line3Text, highlight: null }
-        ];
+                const highlight2Start = line2Text.indexOf(highlightText);
+                const highlight2End = highlight2Start + highlightText.length;
 
-        const maxLine = lines.reduce((prev, current) => {
-            return (prev.text.length > current.text.length) ? prev : current;
-        });
+                const lines = [
+                    { text: line1Text, highlight: null },
+                    { text: line2Text, highlight: { start: highlight2Start, end: highlight2End } },
+                    { text: line3Text, highlight: null }
+                ];
+                const maxLine = lines.reduce((prev, current) => {
+    // 设置字体以便正确测量文本宽度
+    context.font = "30px 'OldFont'";
+    
+    // 使用 measureText 比较两行的实际宽度
+    const prevWidth = context.measureText(prev.text).width;
+    const currentWidth = context.measureText(current.text).width;
+    
+    // 返回宽度更大的行
+    return (prevWidth > currentWidth) ? prev : current;
+});
 
-        context.font = "30px 'OldFont'";
-        const maxLineWidth_pre = context.measureText(maxLine.text).width;
-        const baseFontSize = 1 / maxLineWidth_pre * 28000;
+                context.font = "30px 'OldFont'";
+                const maxLineWidth_pre = context.measureText(maxLine.text).width;
+                const baseFontSize = 1 / maxLineWidth_pre * 28000;
 
-        let maxLineWidth = 0;
-        lines.forEach(line => {
-            context.font = `${baseFontSize}px 'OldFont'`;
-            const textWidth = context.measureText(line.text).width;
-            if (textWidth > maxLineWidth) {
-                maxLineWidth = textWidth;
-            }
-        });
+                let maxLineWidth = 0;
+                lines.forEach(line => {
+                    context.font = `${baseFontSize}px 'OldFont'`;
+                    const textWidth = context.measureText(line.text).width;
+                    if (textWidth > maxLineWidth) {
+                        maxLineWidth = textWidth;
+                    }
+                });
 
-        let yPosition = 100;
-        context.textBaseline = 'top';
+                let yPosition = 100;
+                context.textBaseline = 'top';
 
-        lines.forEach(line => {
-            const fontSize = calculateFontSizeForLine(context, line.text, maxLineWidth, baseFontSize);
+                lines.forEach(line => {
+                    const fontSize = calculateFontSizeForLine(context, line.text, maxLineWidth, baseFontSize);
 
-            if (line.highlight && line.highlight.start !== -1) {
-                drawTextWithHighlight(context, line.text, (canvas.width - maxLineWidth) / 2, yPosition, line.highlight, fontSize);
-            } else {
-                context.font = `${fontSize}px 'OldFont'`;
-                context.fillStyle = 'white';  // 确保文字颜色为白色
-                const lineWidth = context.measureText(line.text).width;
-                context.fillText(line.text, (canvas.width - lineWidth) / 2, yPosition);
-            }
+                    if (line.highlight && line.highlight.start !== -1) {
+                        drawTextWithHighlight(context, line.text, (canvas.width - maxLineWidth) / 2, yPosition, line.highlight, fontSize);
+                    } else {
+                        context.font = `${fontSize}px 'OldFont'`;
+                        context.fillStyle = 'white';  // 确保文字颜色为白色
+                        const lineWidth = context.measureText(line.text).width;
+                        context.fillText(line.text, (canvas.width - lineWidth) / 2, yPosition);
+                    }
 
-            yPosition += fontSize + fontSize * 0.1;
-        });
-    });
-}
+                    yPosition += fontSize + fontSize * 0.06;
+                });
+            });
+        }
 
         function saveCanvas() {
             const canvas = document.getElementById('canvas');
@@ -173,7 +191,12 @@ function drawCanvas() {
             link.click();
         }
 
-        document.getElementById('updateCanvas').addEventListener('click', drawCanvas);
+        // 移除生成按钮，监听输入框的变化
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', drawCanvas);
+        });
+
+        // 监听保存按钮
         document.getElementById('saveCanvas').addEventListener('click', saveCanvas);
 
         window.onload = drawCanvas;
