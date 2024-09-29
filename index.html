@@ -65,7 +65,7 @@
 
         @font-face {
             font-family: 'OldFont';
-            src: url('./oh.ttf') format('truetype');
+            src: url('./oh.ttf?v=1.1') format('truetype');
         }
 
         #loadingText {
@@ -80,7 +80,7 @@
     </style>
 </head>
 
-    
+
 <body>
     <!-- 标题 -->
     <h1 style="text-align: center;">女声优吃印图生成器</h1>
@@ -111,7 +111,7 @@
         <h1>© 2024 <a href="https://github.com/kumoSleeping/nsyc">@Github</a> @kumo</h1>
     </footer>
 
-    
+
     <script>
         function drawCanvas() {
             const font = new FontFace('OldFont', 'url(./oh.ttf)');
@@ -141,16 +141,16 @@
                     { text: line3Text, highlight: null }
                 ];
                 const maxLine = lines.reduce((prev, current) => {
-    // 设置字体以便正确测量文本宽度
-    context.font = "30px 'OldFont'";
-    
-    // 使用 measureText 比较两行的实际宽度
-    const prevWidth = context.measureText(prev.text).width;
-    const currentWidth = context.measureText(current.text).width;
-    
-    // 返回宽度更大的行
-    return (prevWidth > currentWidth) ? prev : current;
-});
+                    // 设置字体以便正确测量文本宽度
+                    context.font = "30px 'OldFont'";
+
+                    // 使用 measureText 比较两行的实际宽度
+                    const prevWidth = context.measureText(prev.text).width;
+                    const currentWidth = context.measureText(current.text).width;
+
+                    // 返回宽度更大的行
+                    return (prevWidth > currentWidth) ? prev : current;
+                });
 
                 context.font = "30px 'OldFont'";
                 const maxLineWidth_pre = context.measureText(maxLine.text).width;
