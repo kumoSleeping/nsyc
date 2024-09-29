@@ -219,27 +219,37 @@
             const highlightedText = text.substring(highlightPart.start, highlightPart.end);
             const textAfterHighlight = text.substring(highlightPart.end);
 
+            // 测量每部分的宽度
             const beforeWidth = context.measureText(textBeforeHighlight).width;
             const highlightWidth = context.measureText(highlightedText).width;
 
-            const metrics = context.measureText(textBeforeHighlight);
-            const actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+            // 测量高亮文本的实际高度
+            const metrics = context.measureText(highlightedText);
+            const ascent = metrics.actualBoundingBoxAscent;
+            const descent = metrics.actualBoundingBoxDescent;
 
-            const rectY = y - metrics.actualBoundingBoxAscent - 4;
-            const rectHeight = actualHeight + 8;
+            // 上下各增加 2 像素的空隙
+            const rectHeight = ascent + descent + 4; // 原高度基础上增加 4 像素的空隙
+            const rectY = y - ascent - 2; // Y 坐标上移 2 像素，让矩形的顶部留出 2 像素空隙
 
+            // 绘制高亮前的文本
             context.fillStyle = 'white';
             context.fillText(textBeforeHighlight, x, y);
 
+            // 绘制高亮背景矩形
             context.fillStyle = bgColor;
             context.fillRect(x + beforeWidth, rectY, highlightWidth, rectHeight);
 
+            // 绘制高亮文本
             context.fillStyle = textColor;
             context.fillText(highlightedText, x + beforeWidth, y);
 
+            // 绘制高亮后的文本
             context.fillStyle = 'white';
             context.fillText(textAfterHighlight, x + beforeWidth + highlightWidth, y);
         }
+
+
     </script>
 </body>
 
