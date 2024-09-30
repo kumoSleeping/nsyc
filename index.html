@@ -229,8 +229,8 @@
             const descent = metrics.actualBoundingBoxDescent;
 
             // 上下各增加 2 像素的空隙
-            const rectHeight = ascent + descent + 4; // 原高度基础上增加 4 像素的空隙
-            const rectY = y - ascent - 2; // Y 坐标上移 2 像素，让矩形的顶部留出 2 像素空隙
+            const rectHeight = ascent + descent + 10; // 原高度基础上增加 4 像素的空隙
+            const rectY = y - ascent - 5; // Y 坐标上移 2 像素，让矩形的顶部留出 2 像素空隙
 
             // 绘制高亮前的文本
             context.fillStyle = 'white';
